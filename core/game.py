@@ -46,7 +46,7 @@ class Game:
         self.defences = pygame.sprite.Group()
         self.bullets = pygame.sprite.Group()
         self.explosions = pygame.sprite.Group()
-        self.load_level("path")
+        self.load_level("basic")
         self.defence_type = 0
         self.defence_prototypes = [
             Defence(self, "defence_" + name, -100, -100)
@@ -57,8 +57,8 @@ class Game:
         self._start_time = time.time()
         self.game_started = False
         # reset the log file each run
-        with open("tower_log.csv", "w") as f:
-            f.write("time,action,tile_x,tile_y\n")
+        #with open("tower_log.csv", "w") as f:
+        #    f.write("time,action,tile_x,tile_y\n")
 
         #Choose default algorithm to run when playing
         self.pathfinding_algo = "greedy"  #possible values {greedy, astar}
@@ -109,7 +109,7 @@ class Game:
                     print("Game timer started!")
 
             elapsed = time.time() - self._start_time
-            #self.replay_tower_placements(elapsed)
+            self.replay_tower_placements(elapsed)
 
             # Call update functions
             self.menu.update()
@@ -147,6 +147,9 @@ class Game:
         """
         Quits and closes the game.
         """
+        # --- LOG METRICS ---
+        if hasattr(self.level, "pathfinding"):
+            self.level.pathfinding.log_metrics()
         self.running = False
 
     def select_defence(self, type):

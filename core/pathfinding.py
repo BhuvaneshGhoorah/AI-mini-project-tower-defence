@@ -17,7 +17,8 @@
 
 import random
 import pygame
-
+import csv
+import os
 
 class Pathfinding:
     """
@@ -38,10 +39,55 @@ class Pathfinding:
             collision (Collision): The collision manager instance.
 
         """
+        
         self.game = game
         self.collision = collision
         self.pool = []
         self.partials = 0
+        # Add after self.partials = 0
+        self.metrics = {
+            "astar": {
+                "paths_completed": 0,
+                "total_nodes_expanded": 0,
+                "total_path_length": 0,
+                "paths_attempted": 0
+            },
+            "greedy": {
+                "paths_completed": 0,
+                "total_nodes_expanded": 0,
+                "total_path_length": 0,
+                "paths_attempted": 0
+            }
+        }
+
+    def log_metrics(self):
+        """
+        Logs current run metrics to a CSV file (tower_metrics.csv)
+        """
+        algo = getattr(self.game, "pathfinding_algo", "astar")
+        metrics = self.metrics[algo]
+
+        # Make file if not exists
+        file_exists = os.path.isfile("tower_metrics.csv")
+        
+        with open("tower_metrics.csv", "a", newline="") as f:
+            writer = csv.writer(f)
+            # Write header if new file
+            if not file_exists:
+                writer.writerow([
+                    "algorithm",
+                    "paths_completed",
+                    "nodes_expanded",
+                    "total_path_length",
+                    "paths_attempted"
+                ])
+            writer.writerow([
+                algo,
+                metrics["paths_completed"],
+                metrics["total_nodes_expanded"],
+                metrics["total_path_length"],
+                metrics["paths_attempted"]
+            ])
 
     def precompute(self, count):
         """
@@ -286,8 +332,10 @@ class Path:
         Uses only heuristic (no path cost).
         """
         iterations = 25
+        nodes_expanded = 0
         while len(self.open_set) > 0 and iterations > 0:
             iterations -= 1
+            nodes_expanded += 1
 
             # Select node with smallest heuristic
             current = min(self.open_set, key=lambda p: self.heuristic(p))
@@ -296,6 +344,12 @@ class Path:
             if current[0] < 0:
                 self.points = self.trace_path(current, self.came_from)
                 self.done = True
+                # --- ADD METRICS UPDATE ---
+                algo = getattr(self.pathfinding.game, "pathfinding_algo", "astar")
+                self.pathfinding.metrics[algo]["paths_completed"] += 1
+                self.pathfinding.metrics[algo]["total_nodes_expanded"] += nodes_expanded
+                self.pathfinding.metrics[algo]["total_path_length"] += len(self.points)
+                self.pathfinding.metrics[algo]["paths_attempted"] += 1
                 return
 
             self.open_set.remove(current)
@@ -321,8 +375,10 @@ class Path:
         Draws debug visualization if enabled.
         """
         iterations = 25
+        nodes_expanded = 0
         while len(self.open_set) > 0 and iterations > 0:
             iterations -= 1
+            nodes_expanded += 1
 
             # Find the next node to evaluate.
             current, current_score = self.get_lowest_score(self.open_set, self.scores)
@@ -331,6 +387,12 @@ class Path:
             if current[0] < 0:
                 self.points = self.trace_path(current, self.came_from)
                 self.done = True
+                # --- ADD METRICS UPDATE ---
+                algo = getattr(self.pathfinding.game, "pathfinding_algo", "astar")
+                self.pathfinding.metrics[algo]["paths_completed"] += 1
+                self.pathfinding.metrics[algo]["total_nodes_expanded"] += nodes_expanded
+                self.pathfinding.metrics[algo]["total_path_length"] += len(self.points)
+                self.pathfinding.metrics[algo]["paths_attempted"] += 1
                 return
 
             # Remove from the open set and move to closed
