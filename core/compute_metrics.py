@@ -16,6 +16,7 @@ with open("tower_metrics.csv", "r") as f:
             "total_path_length": int(row["total_path_length"]),
             "paths_attempted": int(row["paths_attempted"])
         })
+summary = []
 
 for algo, metrics_list in data.items():
     if len(metrics_list) < runs_needed:
@@ -27,6 +28,21 @@ for algo, metrics_list in data.items():
     avg_path_length = sum(m["total_path_length"] for m in metrics_list) / len(metrics_list)
     avg_paths_attempted = sum(m["paths_attempted"] for m in metrics_list) / len(metrics_list)
 
+    summary.append({
+            "algorithm": algo,
+            "avg_paths_completed": avg_paths_completed,
+            "avg_nodes_expanded": avg_nodes_expanded,
+            "avg_path_length": avg_path_length,
+            "avg_paths_attempted": avg_paths_attempted
+        })
+
+    # Save summary
+    with open("metrics_summary.csv", "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=summary[0].keys())
+        writer.writeheader()
+        writer.writerows(summary)
+
+    print("\n✅ Averages saved to metrics_summary.csv")
     print(f"--- {algo} ---")
     print(f"Average paths completed: {avg_paths_completed}")
     print(f"Average nodes expanded: {avg_nodes_expanded}")
