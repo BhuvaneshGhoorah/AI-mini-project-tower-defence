@@ -17,6 +17,7 @@
 
 import random
 import pygame
+import time
 from core.level import Level
 from core.collision import Collision
 from core.defence import Defence
@@ -30,15 +31,16 @@ class Game:
     """ 
     Contains the main control code and the game loop.
     """
-
     def __init__(self, window):
         """ 
         Constructor. 
         
         Args:
             window (Window): The window instance to render to.
-
         """
+        self.show_path_debug = False
+        self._logged_towers = None
+
         self.window = window
         self.clock = pygame.time.Clock()
         self.defences = pygame.sprite.Group()
@@ -46,7 +48,20 @@ class Game:
         self.explosions = pygame.sprite.Group()
         self.load_level("path")
         self.defence_type = 0
-        self.defence_prototypes = [Defence(self, "defence_" + name, -100, -100) for name in ["pillbox", "wall", "mines", "artillery"]]
+        self.defence_prototypes = [
+            Defence(self, "defence_" + name, -100, -100)
+            for name in ["pillbox", "wall", "mines", "artillery"]
+        ]
+
+        # --- NEW LOGGING INITIALIZATION ---
+        self._start_time = time.time()
+        self.game_started = False
+        # reset the log file each run
+        with open("tower_log.csv", "w") as f:
+            f.write("time,action,tile_x,tile_y\n")
+
+        #Choose default algorithm to run when playing
+        self.pathfinding_algo = "greedy"  #possible values {greedy, astar}
 
     def load_level(self, name):
         """
@@ -71,7 +86,7 @@ class Game:
 
         while self.running:
             delta = self.clock.tick(60) / 1000.0
-
+            
             # Look for a quit event
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -82,6 +97,19 @@ class Game:
                     self.menu.clicked()
                 elif event.type == pygame.KEYDOWN:
                     self.menu.key_pressed(event.key)
+                    if event.key == pygame.K_v:
+                        print(f"Key pressed: {event.key}")
+                        self.show_path_debug = not self.show_path_debug
+                    
+
+            if not self.menu.visible:
+                if not self.game_started:
+                    self._start_time = time.time()
+                    self.game_started = True
+                    print("Game timer started!")
+
+            elapsed = time.time() - self._start_time
+            #self.replay_tower_placements(elapsed)
 
             # Call update functions
             self.menu.update()
@@ -106,6 +134,15 @@ class Game:
             self.explosions.draw(self.window.screen)
             self.menu.draw(self.window.screen)
 
+            # --- PATHFINDING DEBUG VISUALIZATION ---
+            if self.show_path_debug:
+                for path in self.level.pathfinding.pool:
+                    if hasattr(path, "draw_debug"):
+                        path.draw_debug()
+
+            # Menu and HUD last (on top)
+            self.menu.draw(self.window.screen)
+
     def quit(self):
         """
         Quits and closes the game.
@@ -128,7 +165,6 @@ class Game:
 
         Args:
             position (int, int): The intended coordinates of the defence.
-
         """
         if self.defence_type < 0:
             return
@@ -151,3 +187,55 @@ class Game:
 
         self.defences.add(Defence(self, defence.name, x, y))
         self.level.money -= defence.cost
+
+        # --- NEW LOGGING ---
+        tile_x = x // 32
+        tile_y = y // 32
+        self.log_tower_event(defence.name, tile_x, tile_y)
+
+    def log_tower_event(self, action, tile_x, tile_y):
+        """Logs tower placement/removal events with timestamp."""
+        import time
+        t = round(time.time() - self._start_time, 3)
+        with open("tower_log.csv", "a") as f:
+            f.write(f"{t},{action},{tile_x},{tile_y}\n")
+    
+    def replay_tower_placements(self, elapsed_time):
+        """
+        Reads tower_log.csv and automatically places logged defences at the recorded time.
+        Only places towers whose timestamps are <= elapsed_time and not yet placed.
+        """
+        import csv
+
+        # Load file only once
+        if self._logged_towers is None:
+            print("[Replay] Loading tower_log.csv...")
+            self._logged_towers = []
+            try:
+                with open("tower_log.csv", "r") as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        try:
+                            t = float(row["time"])
+                            name = row["action"]
+                            x = int(row["tile_x"])
+                            y = int(row["tile_y"])
+                            self._logged_towers.append({"time": t, "name": name, "x": x, "y": y, "done": False})
+                        except Exception as e:
+                            print("Error reading log line:", e)
+            except FileNotFoundError:
+                print("No tower_log.csv found; skipping replay.")
+                self._logged_towers = []
+
+        # Only process if timer has started
+        if not self.game_started or self._start_time is None:
+            return
+
+        # Check which towers to place
+        for tower in self._logged_towers:
+            if not tower["done"] and elapsed_time >= tower["time"]:
+                px = tower["x"] * 32
+                py = tower["y"] * 32
+                self.defences.add(Defence(self, tower["name"], px, py))
+                tower["done"] = True
+                print(f"[Replay] Replayed {tower['name']} at ({tower['x']}, {tower['y']})")

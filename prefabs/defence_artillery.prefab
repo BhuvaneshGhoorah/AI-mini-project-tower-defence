@@ -9,7 +9,7 @@ images  :  rotimg  :  textures\defence_artillery.png
 block  :  bool  :  1
 
 # Defence Settings
-cost   :  int   :  450
+cost   :  int   :  1
 rotate :  bool  :  1
 flash_offset  :  float  :  32
 

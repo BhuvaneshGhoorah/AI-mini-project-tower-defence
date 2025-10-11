@@ -16,6 +16,7 @@
 
 
 import random
+import pygame
 
 
 class Pathfinding:
@@ -195,6 +196,31 @@ class Path:
     Calculated using the A* pathfinding algorithm across multiple frames.
     Can be repaired if one of its points becomes blocked.
     """
+    def draw_debug(self):
+        """
+        Draws the A* open and closed sets for debugging.
+        Displays open nodes in green, closed nodes in red,
+        and the current final path in blue.
+        """
+        
+        if not hasattr(self.pathfinding.game, "window") or not hasattr(self.pathfinding.game.window, "screen"):
+            return
+
+        surface = self.pathfinding.game.window.screen
+        res = self.res
+        
+        # Draw open set
+        for (x, y) in self.open_set:
+            pygame.draw.rect(surface, (0, 255, 0), (x, y, res, res), 1)
+
+        # Draw closed set
+        for (x, y) in self.closed_set:
+            pygame.draw.rect(surface, (255, 0, 0), (x, y, res, res), 1)
+
+        # Draw path if available
+        if self.points:
+            for (x, y) in self.points:
+                pygame.draw.rect(surface, (0, 0, 255), (x, y, res, res), 1)
 
     def __init__(self, pathfinding, start):
         """ 
@@ -243,10 +269,56 @@ class Path:
         self.open_set = {self.start}
         self.scores = {self.start: 0}
         self.came_from = { }
-
+    
     def search(self):
         """
-        Starts or continues an A* search for an apropriate path.
+        Chooses algorithm based on game setting.
+        """
+        algo = getattr(self.pathfinding.game, "pathfinding_algo", "astar")
+        if algo == "greedy":
+            return self.search_greedy()
+        else:
+            return self.search_astar()
+    
+    def search_greedy(self):
+        """
+        Greedy Best First Search implementation.
+        Uses only heuristic (no path cost).
+        """
+        iterations = 25
+        while len(self.open_set) > 0 and iterations > 0:
+            iterations -= 1
+
+            # Select node with smallest heuristic
+            current = min(self.open_set, key=lambda p: self.heuristic(p))
+
+            # Check if goal reached
+            if current[0] < 0:
+                self.points = self.trace_path(current, self.came_from)
+                self.done = True
+                return
+
+            self.open_set.remove(current)
+            self.closed_set.add(current)
+
+            # Explore neighbours
+            for neighbour in self.get_neighbours(current):
+                if neighbour in self.closed_set:
+                    continue
+
+                if neighbour not in self.open_set:
+                    self.came_from[neighbour] = current
+                    self.open_set.add(neighbour)
+
+        # Optional: visualize each frame
+        if hasattr(self.pathfinding, "game") and hasattr(self.pathfinding.game, "window"):
+            if self.pathfinding.game.show_path_debug:
+                self.draw_debug()
+
+    def search_astar(self):
+        """
+        Starts or continues an A* search for an appropriate path.
+        Draws debug visualization if enabled.
         """
         iterations = 25
         while len(self.open_set) > 0 and iterations > 0:
@@ -261,16 +333,14 @@ class Path:
                 self.done = True
                 return
 
-            # Remove from the open set.
+            # Remove from the open set and move to closed
             self.open_set.remove(current)
-
-            # Add to the closed set.
             self.closed_set.add(current)
 
-            # Consider each neighbour.
+            # Consider each neighbour
             for neighbour in self.get_neighbours(current):
 
-                # Skip if already in the closed set
+                # Skip if already in closed set
                 if neighbour in self.closed_set:
                     continue
 
@@ -283,6 +353,20 @@ class Path:
 
                 if not exists:
                     self.open_set.add(neighbour)
+
+        # Optional — visualize every frame
+        if hasattr(self.pathfinding, "game") and hasattr(self.pathfinding.game, "window"):
+            if self.pathfinding.game.show_path_debug:
+                self.draw_debug()
+
+    def heuristic(self, position):
+        """
+        Heuristic for Greedy Best First Search.
+        Uses Manhattan distance from the current position to the left edge (goal area).
+        """
+        goal_x = 0  # The finish line is when x < 0
+        dx = abs(position[0] - goal_x)
+        return dx
 
     def get_lowest_score(self, open_set, scores):
         """
