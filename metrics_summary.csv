@@ -1,3 +1,2 @@
 algorithm,avg_paths_completed,avg_nodes_expanded,avg_path_length,avg_paths_attempted
-astar,35.61538461538461,474.6923076923077,1502.7692307692307,35.61538461538461
-greedy,51.5,187.5,2379.9,51.5
+astar,43.5,513.5,1835.7,43.5

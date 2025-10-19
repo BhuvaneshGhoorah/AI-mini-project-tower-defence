@@ -57,6 +57,12 @@ class Pathfinding:
                 "total_nodes_expanded": 0,
                 "total_path_length": 0,
                 "paths_attempted": 0
+            },
+            "dijkstra": {
+                "paths_completed": 0,
+                "total_nodes_expanded": 0,
+                "total_path_length": 0,
+                "paths_attempted": 0
             }
         }
 
@@ -323,6 +329,8 @@ class Path:
         algo = getattr(self.pathfinding.game, "pathfinding_algo", "astar")
         if algo == "greedy":
             return self.search_greedy()
+        elif algo == "dijkstra":
+            return self.search_dijkstra()
         else:
             return self.search_astar()
     
@@ -416,19 +424,79 @@ class Path:
                 if not exists:
                     self.open_set.add(neighbour)
 
-        # Optional — visualize every frame
+        #visualize every frame
         if hasattr(self.pathfinding, "game") and hasattr(self.pathfinding.game, "window"):
             if self.pathfinding.game.show_path_debug:
                 self.draw_debug()
 
+    def search_dijkstra(self):
+        """
+        Dijkstra's Algorithm (Uniform Cost Search)
+        Finds the shortest path without using a heuristic.
+        """
+        iterations = 25
+        nodes_expanded = 0
+
+        while len(self.open_set) > 0 and iterations > 0:
+            iterations -= 1
+            nodes_expanded += 1
+
+            # Select node with lowest cost so far (no heuristic)
+            current, current_cost = self.get_lowest_score(self.open_set, self.scores)
+
+            # Check if goal reached (left edge)
+            if current[0] < 0:
+                self.points = self.trace_path(current, self.came_from)
+                self.done = True
+                algo = "dijkstra"
+                self.pathfinding.metrics[algo]["paths_completed"] += 1
+                self.pathfinding.metrics[algo]["total_nodes_expanded"] += nodes_expanded
+                self.pathfinding.metrics[algo]["total_path_length"] += len(self.points)
+                self.pathfinding.metrics[algo]["paths_attempted"] += 1
+                return
+
+            # Move from open to closed
+            self.open_set.remove(current)
+            self.closed_set.add(current)
+
+            # Explore neighbours
+            for neighbour in self.get_neighbours(current):
+                if neighbour in self.closed_set:
+                    continue
+
+                # Dijkstra cost = distance so far + move cost
+                new_cost = current_cost + self.get_cost(current, neighbour)
+                exists = neighbour in self.open_set
+
+                # If new or cheaper path found
+                if not exists or new_cost < self.scores.get(neighbour, float("inf")):
+                    self.scores[neighbour] = new_cost
+                    self.came_from[neighbour] = current
+                    if not exists:
+                        self.open_set.add(neighbour)
+
+            #draw visual debug
+            if hasattr(self.pathfinding.game, "show_path_debug") and self.pathfinding.game.show_path_debug:
+                self.draw_debug()
+
+    
     def heuristic(self, position):
         """
         Heuristic for Greedy Best First Search.
         Uses Manhattan distance from the current position to the left edge (goal area).
         """
-        goal_x = 0  # The finish line is when x < 0
-        dx = abs(position[0] - goal_x)
-        return dx
+        goal = (0, position[1])  # assuming goal is at the left edge
+        metric = getattr(self.pathfinding.game, "distance_metric", "manhattan")
+
+        dx = abs(position[0] - goal[0])
+        dy = abs(position[1] - goal[1])
+
+        if metric == "euclidean":
+            return (dx ** 2 + dy ** 2) ** 0.5
+        elif metric == "chebyshev":
+            return max(dx, dy)
+        else:  # default to full Manhattan
+            return dx + dy
 
     def get_lowest_score(self, open_set, scores):
         """
