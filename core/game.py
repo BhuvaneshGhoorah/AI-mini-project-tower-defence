@@ -61,8 +61,10 @@ class Game:
         #    f.write("time,action,tile_x,tile_y\n")
 
         #Choose default algorithm to run when playing
-        self.pathfinding_algo = "dijkstra"  #possible values {greedy, astar, dijkstra}
+        self.pathfinding_algo = "astar"  #possible values {greedy, astar, dijkstra}
         self.distance_metric = "manhattan"  #possible values {manhattan, euclidean, chebyshev}
+        #We determined that these combinations of algo + distance measure are the best:
+        #{astar with manhattan, greedy with euclidean, dijkstra with euclidean}
 
     def load_level(self, name):
         """
