@@ -9,7 +9,7 @@ image  :  aimg  :  textures\block_small.jpg
 block  :  bool  :  1
 
 # Defence Settings
-cost    :  int  :  25
+cost    :  int  :  1
 rotate  :  bool :  0
 
 # Attack Settings

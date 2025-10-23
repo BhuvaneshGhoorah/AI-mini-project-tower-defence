@@ -353,7 +353,7 @@ class Path:
                 self.points = self.trace_path(current, self.came_from)
                 self.done = True
                 # --- ADD METRICS UPDATE ---
-                algo = getattr(self.pathfinding.game, "pathfinding_algo", "astar")
+                algo = getattr(self.pathfinding.game, "pathfinding_algo", "greedy")
                 self.pathfinding.metrics[algo]["paths_completed"] += 1
                 self.pathfinding.metrics[algo]["total_nodes_expanded"] += nodes_expanded
                 self.pathfinding.metrics[algo]["total_path_length"] += len(self.points)
@@ -414,7 +414,9 @@ class Path:
                 if neighbour in self.closed_set:
                     continue
 
-                score = current_score + self.get_cost(current, neighbour)
+                g = current_score + self.get_cost(current, neighbour)
+                h = self.heuristic(neighbour)
+                score = g + h
                 exists = (neighbour in self.open_set)
 
                 if not exists or self.scores[neighbour] > score:
@@ -482,10 +484,10 @@ class Path:
     
     def heuristic(self, position):
         """
-        Heuristic for Greedy Best First Search.
-        Uses Manhattan distance from the current position to the left edge (goal area).
+        Heuristic for Greedy Best First Search and A*.
+        Uses one of the 3 distance measures from the current position to the left edge (goal area).
         """
-        goal = (0, position[1])  # assuming goal is at the left edge
+        goal = (0, position[1])  
         metric = getattr(self.pathfinding.game, "distance_metric", "manhattan")
 
         dx = abs(position[0] - goal[0])

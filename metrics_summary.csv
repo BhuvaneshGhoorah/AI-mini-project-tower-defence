@@ -1,4 +1,4 @@
 algorithm,avg_paths_completed,avg_nodes_expanded,avg_path_length,avg_paths_attempted
-astar,43.5,513.5,1835.7,43.5
+astar,42.9,259.1,1801.8,42.9
 greedy,49.2,176.6,2272.7,49.2
 dijkstra,42.2,524.5,1780.2,42.2

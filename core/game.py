@@ -64,7 +64,7 @@ class Game:
         self.pathfinding_algo = "astar"  #possible values {greedy, astar, dijkstra}
         self.distance_metric = "manhattan"  #possible values {manhattan, euclidean, chebyshev}
         #We determined that these combinations of algo + distance measure are the best:
-        #{astar with manhattan, greedy with euclidean, dijkstra with euclidean}
+        #{astar with manhattan, greedy with euclidean, dijkstra with euclidean} {and the overall BEST algo is astar with manhattan}
 
     def load_level(self, name):
         """
@@ -197,7 +197,7 @@ class Game:
         # --- NEW LOGGING ---
         tile_x = x // 32
         tile_y = y // 32
-        self.log_tower_event(defence.name, tile_x, tile_y)
+        #self.log_tower_event(defence.name, tile_x, tile_y)
 
     def log_tower_event(self, action, tile_x, tile_y):
         """Logs tower placement/removal events with timestamp."""
