@@ -1,4 +1,4 @@
-algorithm,avg_paths_completed,avg_nodes_expanded,avg_path_length,avg_paths_attempted
-astar,42.9,259.1,1801.8,42.9
-greedy,49.2,176.6,2272.7,49.2
-dijkstra,42.2,524.5,1780.2,42.2
+algorithm,avg_paths_completed,std_paths_completed,avg_nodes_expanded,std_nodes_expanded,avg_path_length,std_path_length,avg_paths_attempted,std_paths_attempted
+greedy,91.08,31.43,511.5,276.85,4172.25,1405.65,91.08,31.43
+astar,44.17,8.28,442.42,277.53,1854,346.9,44.17,8.28
+dijkstra,49.42,16.96,727,318.21,2093.83,735.66,49.42,16.96
