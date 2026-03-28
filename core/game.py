@@ -112,7 +112,7 @@ class Game:
                     print("Game timer started!")
 
             elapsed = time.time() - self._start_time
-            self.replay_tower_placements(elapsed)
+            #self.replay_tower_placements(elapsed)
 
             # Call update functions
             self.menu.update()

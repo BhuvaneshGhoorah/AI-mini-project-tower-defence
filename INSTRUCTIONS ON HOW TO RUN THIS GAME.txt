@@ -1,0 +1,8 @@
+run main.py, select map and play the game or play on default map
+to change algorithm/distance measure, go to core/game.py at line 64
+to disable automation of tower placement from last playthrough, comment line 115 in core/game.py(self.replay_tower_placements(elapsed))
+to enable overwriting tower_log.csv which contains what the automation will use, uncomment line 60/61 (allows overwriting) and line 200(this is what actually writes) in core/game.py
+to increase the number of coins initially, write your amount at line 88 in core/level.py
+to make an average and standard deviation based on the raw measurements in tower_metrics.csv, run core/compute_metrics.py, to generate metrics_summary.csv
+to visualize metrics_summary.csv, run core/plot_metrics.py
+to change the cost of an obstacle (e.g: Artillery), go to prefabs/defence_artillery at line 12(cost   :  int   :  450) to enter new cost
